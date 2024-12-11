@@ -1,0 +1,137 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Чат для общения</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 20px;
+            background-color: #f0f4ff;
+            color: #333;
+        }
+        h1 {
+            text-align: center;
+            color: #1e88e5;
+        }
+        #chat-container {
+            max-width: 800px;
+            margin: 0 auto;
+            background: #ffffff;
+            border-radius: 10px;
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+            padding: 20px;
+        }
+        #messages {
+            height: 300px;
+            overflow-y: auto;
+            border: 1px solid #bbdefb;
+            border-radius: 5px;
+            padding: 10px;
+            background-color: #e3f2fd;
+            margin-bottom: 20px;
+        }
+        #online {
+            height: 150px;
+            overflow-y: auto;
+            border: 1px solid #bbdefb;
+            border-radius: 5px;
+            padding: 10px;
+            background-color: #dbefff;
+            margin-bottom: 20px;
+        }
+        #messageInput {
+            width: calc(100% - 110px);
+            padding: 10px;
+            border: 1px solid #bbdefb;
+            border-radius: 5px;
+            outline: none;
+        }
+        #sendButton {
+            width: 80px;
+            padding: 10px;
+            background-color: #1e88e5;
+            color: white;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            transition: background-color 0.3s;
+        }
+        #sendButton:hover {
+            background-color: #1565c0;
+        }
+        .message {
+            padding: 10px;
+            margin: 5px 0;
+            border-radius: 5px;
+            color: #fff;
+            font-weight: bold;
+        }
+        .client {
+            padding: 5px 10px;
+            border-radius: 3px;
+            background-color: #bbdefb;
+            margin: 5px 0;
+        }
+    </style>
+</head>
+<body>
+    <h1>Чат</h1>
+    <div id="chat-container">
+        <div id="messages"></div>
+        <input id="messageInput" type="text" placeholder="Сообщения писать тут">
+        <button id="sendButton">Отправить</button>
+        <h3>Пользователи в чате</h3>
+        <div id="online"></div>
+    </div>
+
+    <script>
+        const ws = new WebSocket("ws://localhost:8888/websocket");
+        const messagesDiv = document.getElementById("messages");
+        const onlineDiv = document.getElementById("online");
+        const messageInput = document.getElementById("messageInput");
+        const sendButton = document.getElementById("sendButton");
+
+        ws.onmessage = (event) => {
+            const data = JSON.parse(event.data);
+
+            if (data.type === "message") {
+
+                const message = document.createElement("div");
+                message.classList.add("message");
+                message.style.backgroundColor = data.color;
+                message.textContent = data.content;
+
+                messagesDiv.appendChild(message);
+                messagesDiv.scrollTop = messagesDiv.scrollHeight;
+            } else if (data.type === "clients") {
+                // Обновляем список клиентов
+                onlineDiv.innerHTML = "";
+                data.clients.forEach(client => {
+                    const clientDiv = document.createElement("div");
+                    clientDiv.classList.add("client");
+                    clientDiv.textContent = client;
+                    onlineDiv.appendChild(clientDiv);
+                });
+            }
+        };
+
+        // Отправка сообщения на сервер
+        sendButton.addEventListener("click", () => {
+            const message = messageInput.value.trim();
+            if (message) {
+                ws.send(message);
+                messageInput.value = "";
+            }
+        });
+
+        // Отправка сообщения при нажатии Enter
+        messageInput.addEventListener("keypress", (e) => {
+            if (e.key === "Enter") {
+                sendButton.click();
+            }
+        });
+    </script>
+</body>
+</html>
